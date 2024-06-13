@@ -138,14 +138,14 @@ resource "aws_key_pair" "tfkeypair" {
   key_name   = "tfkeypair"
   public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCQgNZMOZ3iCfuPkxn/DLGhzHTHnYZjvuaTxaN4ml34k0Awi4KXpRV7klGblS9QPA4lRKF3JFhZaTlwWGc1vvC1jRy6VZBeE6AMcfvc23cNfLQ+7YphyAuKwBdBoWXCOzrpcwrskC2JmoOOnYo8qbJFMdAzXUVbmVJTSD0oiN1xG/kZnkpHx2u7hM6vDBiI3S5tbouWxm03eLA3l3W1SLCLEeYPijRocDuMXXN8tBlhfmC8WDkJkez9NFKicu9XfsEQFS5QP5dC66e6gq830d54XEqx7cmNNm6HMWjPYl7B7Kt/3CyHH4tBEfaIOfsCzXowLU7N365gKBZQilDLW4BOpXIh8PY+3cPu2v+83BSJZvnPlCH7IsxmnZX4E1MOGmQsK+Gyoh3/9QhnQg7xZlbG9hxhMSZS8FrglzC5qD1MZNOPXx46unpgDKw4TFPyBZ7DYaMHQCK4vRaOFGMGpgxjxYB2odqEzV50q5o8XlRNFYZ43cWbzxUgZEtLCXO50Rk= swl@swl"
 }
-data "terraform_remote_state" "db" {
-  backend = "s3"
-  config = {
-    bucket = "swl-terraform-up-and-running"
-    key = "stage/s3/terraform.tfstate"
-    region = "ap-southeast-1"
-  }
-}
+# data "terraform_remote_state" "db" {
+#   backend = "s3"
+#   config = {
+#     bucket = "swl-terraform-up-and-running"
+#     key = "stage/s3/terraform.tfstate"
+#     region = "ap-southeast-1"
+#   }
+# }
 
 # S3 backend
 resource "aws_s3_bucket" "terraform_state" {
@@ -180,7 +180,7 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
 }
 
 resource "aws_dynamodb_table" "terraform_locks" {
-  name         = var.db_remote_state_key
+  name         = "terraform-up-and-running-locks"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
   attribute {
@@ -189,12 +189,12 @@ resource "aws_dynamodb_table" "terraform_locks" {
   }
 }
 
-# terraform {
-#   backend "s3" {
-#     bucket         = var.db_remote_state_bucket
-#     key            = var.db_remote_state_key
-#     region         = "ap-southeast-1"
-#     dynamodb_table = "terraform-up-and-running-locks"
-#     encrypt        = true
-#   }
-# }
+terraform {
+  backend "s3" {
+    bucket         = "swl-terraform-up-and-running"
+    key            = "stage/s3/terraform.tfstate"
+    region         = "ap-southeast-1"
+    dynamodb_table = "terraform-up-and-running-locks"
+    encrypt        = true
+  }
+}
