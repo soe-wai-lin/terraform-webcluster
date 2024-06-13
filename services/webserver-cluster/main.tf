@@ -32,7 +32,7 @@ resource "aws_security_group" "instance" {
 }
 
 resource "aws_security_group_rule" "allow_server_http_inbound" {
-  type = ingress
+  type = "ingress"
   security_group_id = aws_security_group.instance.id
   from_port = var.server_port
   to_port = var.server_port
@@ -55,7 +55,7 @@ resource "aws_lb" "example" {
   name = var.cluster_name
   load_balancer_type = "application"
   subnets = data.aws_subnets.default.ids
-  security_groups = [var.cluster_name.alb.id]
+  security_groups = [aws_security_group.alb.id]
 }
 
 locals {
@@ -86,7 +86,7 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group_rule" "allow_http_inbound" {
-  type = ingress
+  type = "ingress"
   security_group_id = aws_security_group.alb.id
   from_port = local.http_port
   to_port =  local.http_port
@@ -95,7 +95,7 @@ resource "aws_security_group_rule" "allow_http_inbound" {
 }
 
 resource "aws_security_group_rule" "allow_http_outbound" {
-  type = egress
+  type = "egress"
   security_group_id = aws_security_group.alb.id
   from_port = local.any_port
   to_port =  local.any_port 
