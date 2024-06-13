@@ -189,12 +189,12 @@ resource "aws_dynamodb_table" "terraform_locks" {
   }
 }
 
-terraform {
-  backend "s3" {
-    bucket         = var.db_remote_state_bucket
-    key            = var.db_remote_state_key
-    region         = "ap-southeast-1"
-    dynamodb_table = "terraform-up-and-running-locks"
-    encrypt        = true
-  }
-}
+# terraform {
+#   backend "s3" {
+#     bucket         = var.db_remote_state_bucket
+#     key            = var.db_remote_state_key
+#     region         = "ap-southeast-1"
+#     dynamodb_table = "terraform-up-and-running-locks"
+#     encrypt        = true
+#   }
+# }
