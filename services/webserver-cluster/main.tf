@@ -2,7 +2,7 @@ resource "aws_launch_configuration" "example" {
   image_id           = "ami-003c463c8207b4dfa"
   instance_type = var.instance_type
   security_groups = [aws_security_group.instance.id]
-  user_data = templatefile("${path.module}/user-data.sh",{
+  user_data = templatefile("user-data.sh",{
     server_port = var.server_port
     db_address = data.terraform_remote_state.db.outputs.address
     db_port = data.terraform_remote_state.db.outputs.port
@@ -138,20 +138,63 @@ resource "aws_key_pair" "tfkeypair" {
   key_name   = "tfkeypair"
   public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCQgNZMOZ3iCfuPkxn/DLGhzHTHnYZjvuaTxaN4ml34k0Awi4KXpRV7klGblS9QPA4lRKF3JFhZaTlwWGc1vvC1jRy6VZBeE6AMcfvc23cNfLQ+7YphyAuKwBdBoWXCOzrpcwrskC2JmoOOnYo8qbJFMdAzXUVbmVJTSD0oiN1xG/kZnkpHx2u7hM6vDBiI3S5tbouWxm03eLA3l3W1SLCLEeYPijRocDuMXXN8tBlhfmC8WDkJkez9NFKicu9XfsEQFS5QP5dC66e6gq830d54XEqx7cmNNm6HMWjPYl7B7Kt/3CyHH4tBEfaIOfsCzXowLU7N365gKBZQilDLW4BOpXIh8PY+3cPu2v+83BSJZvnPlCH7IsxmnZX4E1MOGmQsK+Gyoh3/9QhnQg7xZlbG9hxhMSZS8FrglzC5qD1MZNOPXx46unpgDKw4TFPyBZ7DYaMHQCK4vRaOFGMGpgxjxYB2odqEzV50q5o8XlRNFYZ43cWbzxUgZEtLCXO50Rk= swl@swl"
 }
-
-terraform {
-  backend "s3" {
-    bucket         = var.db_remote_state_bucket
-    key            = var.db_remote_state_key
-    region         = "ap-southeast-1"
-    encrypt        = true
-  }
-}
 data "terraform_remote_state" "db" {
   backend = "s3"
   config = {
     bucket = var.db_remote_state_bucket
     key = var.db_remote_state_key
     region = "ap-southeast-1"
+  }
+}
+
+# S3 backend
+resource "aws_s3_bucket" "terraform_state" {
+  bucket = var.db_remote_state_bucket
+  lifecycle {
+    prevent_destroy = false
+  }
+}
+
+resource "aws_s3_bucket_versioning" "enabled" {
+  bucket = aws_s3_bucket.terraform_state.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "default" {
+  bucket = aws_s3_bucket.terraform_state.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "public_access" {
+  bucket                  = aws_s3_bucket.terraform_state.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = var.db_remote_state_key
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+}
+
+terraform {
+  backend "s3" {
+    bucket         = var.db_remote_state_bucket
+    key            = var.db_remote_state_key
+    region         = "ap-southeast-1"
+    dynamodb_table = "terraform-up-and-running-locks"
+    encrypt        = true
   }
 }
