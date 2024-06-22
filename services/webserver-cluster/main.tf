@@ -4,8 +4,8 @@ resource "aws_launch_configuration" "example" {
   security_groups = [aws_security_group.instance.id]
   user_data = templatefile("${path.module}/user-data.sh",{
     server_port = var.server_port
-    db_address = data.terraform_remote_state.db.outputs.db_address
-    db_port = data.terraform_remote_state.db.outputs.db_port
+    db_address = data.terraform_remote_state.db.outputs
+    db_port = data.terraform_remote_state.db.allow_http_outbound
   })
 
   lifecycle {
