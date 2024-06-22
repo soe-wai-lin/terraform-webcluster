@@ -184,13 +184,3 @@ resource "aws_dynamodb_table" "terraform_locks" {
     type = "S"
   }
 }
-
-terraform {
-  backend "s3" {
-    bucket         = "swl-terraform-up-and-running"
-    key            = "stage/s3/terraform.tfstate"
-    region         = "ap-southeast-1"
-    dynamodb_table = "terraform-up-and-running-locks"
-    encrypt        = true
-  }
-}
