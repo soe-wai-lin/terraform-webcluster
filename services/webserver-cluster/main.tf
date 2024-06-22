@@ -2,7 +2,7 @@ resource "aws_launch_configuration" "example" {
   image_id           = "ami-003c463c8207b4dfa"
   instance_type = var.instance_type
   security_groups = [aws_security_group.instance.id]
-  user_data = templatefile("user-data.sh",{
+  user_data = templatefile("${path.module}/user-data.sh",{
     server_port = var.server_port
     db_address = data.terraform_remote_state.db.outputs.address
     db_port = data.terraform_remote_state.db.outputs.port
@@ -12,7 +12,7 @@ resource "aws_launch_configuration" "example" {
     create_before_destroy = true
   }
 }
-
+  
 resource "aws_autoscaling_group" "example" {
   launch_configuration = aws_launch_configuration.example.name
   vpc_zone_identifier = data.aws_subnets.default.ids
@@ -134,18 +134,14 @@ resource "aws_lb_listener_rule" "asg" {
   }  
 }
 
-resource "aws_key_pair" "tfkeypair" {
-  key_name   = "tfkeypair"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCQgNZMOZ3iCfuPkxn/DLGhzHTHnYZjvuaTxaN4ml34k0Awi4KXpRV7klGblS9QPA4lRKF3JFhZaTlwWGc1vvC1jRy6VZBeE6AMcfvc23cNfLQ+7YphyAuKwBdBoWXCOzrpcwrskC2JmoOOnYo8qbJFMdAzXUVbmVJTSD0oiN1xG/kZnkpHx2u7hM6vDBiI3S5tbouWxm03eLA3l3W1SLCLEeYPijRocDuMXXN8tBlhfmC8WDkJkez9NFKicu9XfsEQFS5QP5dC66e6gq830d54XEqx7cmNNm6HMWjPYl7B7Kt/3CyHH4tBEfaIOfsCzXowLU7N365gKBZQilDLW4BOpXIh8PY+3cPu2v+83BSJZvnPlCH7IsxmnZX4E1MOGmQsK+Gyoh3/9QhnQg7xZlbG9hxhMSZS8FrglzC5qD1MZNOPXx46unpgDKw4TFPyBZ7DYaMHQCK4vRaOFGMGpgxjxYB2odqEzV50q5o8XlRNFYZ43cWbzxUgZEtLCXO50Rk= swl@swl"
+data "terraform_remote_state" "db" {
+  backend = "s3"
+  config = {
+    bucket = var.db_remote_state_bucket
+    key = var.db_remote_state_key
+    region = "ap-southeast-1"
+  }
 }
-# data "terraform_remote_state" "db" {
-#   backend = "s3"
-#   config = {
-#     bucket = "swl-terraform-up-and-running"
-#     key = "stage/s3/terraform.tfstate"
-#     region = "ap-southeast-1"
-#   }
-# }
 
 # S3 backend
 resource "aws_s3_bucket" "terraform_state" {
