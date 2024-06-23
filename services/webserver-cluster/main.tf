@@ -2,11 +2,11 @@ resource "aws_launch_configuration" "example" {
   image_id           = "ami-003c463c8207b4dfa"
   instance_type = var.instance_type
   security_groups = [aws_security_group.instance.id]
-  user_data = templatefile("${path.module}/user-data.sh",{
-    server_port = var.server_port
-    db_address = data.terraform_remote_state.db_address
-    db_port = data.terraform_remote_state.db_port
-  })
+  user_data = <<-EOF
+              #!/bin/bash
+              echo "Hello, World" > index.html
+              nohup busybox httpd -f -p ${var.server_port} &
+              EOF
 
   lifecycle {
     create_before_destroy = true
@@ -134,11 +134,11 @@ resource "aws_lb_listener_rule" "asg" {
   }  
 }
 
-data "terraform_remote_state" "db" {
-  backend = "s3"
-  config = {
-    bucket = var.db_remote_state_bucket
-    key = var.db_remote_state_key
-    region = "ap-southeast-1"
-  }
-}
+# data "terraform_remote_state" "db" {
+#   backend = "s3"
+#   config = {
+#     bucket = var.db_remote_state_bucket
+#     key = var.db_remote_state_key
+#     region = "ap-southeast-1"
+#   }
+# }
